@@ -9,12 +9,15 @@ import Eth from "ethjs";
 import { TransitionGroup } from "react-transition-group";
 
 const JSON_RPC_URL = "https://mainnet.infura.io/G43qWCHvm4lsVQtV7tvu";
+const BLOCK_WIDTH = 200;
+const BLOCK_HEIGHT = 100;
 
 const BlockView = styled("a")`
   text-decoration: none;
   position: absolute;
-  width: 140px;
-  height: 65px;
+  width: ${BLOCK_WIDTH - 10}px;
+  height: ${BLOCK_HEIGHT - 10}px;
+  padding: 5px;
   display: flex;
   flex-direction: column;
   color: #fff;
@@ -26,16 +29,16 @@ const BlockView = styled("a")`
     padding 0.2s;
   &:hover {
     margin: -2px;
-    width: 144px;
-    height: 69px;
-    padding: 2px;
+    width: ${BLOCK_WIDTH - 6};
+    height: ${BLOCK_HEIGHT - 6}px;
+    padding: 7px;
   }
 `;
 
 const BlockContainer = styled("div")`
   position: absolute;
-  width: 150px;
-  height: 75px;
+  width: ${BLOCK_WIDTH}px;
+  height: ${BLOCK_HEIGHT}px;
   padding: 5px;
   transition: top 0.2s, left 0.2s, transform 0.2s, opacity 0.2s;
   opacity: 0;
@@ -135,9 +138,7 @@ export default class Index extends Component {
 
     // Automatically make snapshots
     autorun(() => {
-      this.snapshots.push(
-        Array.from(this.blocks.values()).map(bl => ({ ...bl }))
-      );
+      this.snapshots.push(this.snapshot);
       untracked(() => {
         if (
           this.currentSnapshotIndex &&
@@ -148,6 +149,14 @@ export default class Index extends Component {
         if (this.snapshots.length > MAX_SNAPSHOTS) this.snapshots.shift(1);
       });
     });
+  }
+
+  @computed
+  get snapshot() {
+    // Clone each element
+    const array = Array.from(this.blocks.values()).map(bl => ({ ...bl }));
+    array.sort((a, b) => b.childDepth - a.childDepth);
+    return array;
   }
 
   prevSnapshot() {
@@ -176,7 +185,7 @@ export default class Index extends Component {
         this.snapshots.length - this.currentSnapshotIndex - 1
       ];
     } else {
-      return Array.from(this.blocks.values());
+      return this.snapshot;
     }
   }
 
@@ -215,8 +224,8 @@ export default class Index extends Component {
               <BlockContainer
                 key={block.hash}
                 style={{
-                  top: (this.maxBlockNumber - block.number) * 75,
-                  left: renderedBlocksByNumber[block.number] * 150 - 150
+                  top: (this.maxBlockNumber - block.number) * BLOCK_HEIGHT,
+                  left: (renderedBlocksByNumber[block.number] - 1) * BLOCK_WIDTH
                 }}
               >
                 <BlockView
@@ -227,6 +236,7 @@ export default class Index extends Component {
                     backgroundColor: toColor(block.childDepth)
                   }}
                 >
+                  <div style={{ fontSize: "0.5em" }}>{block.number}</div>
                   <div>{block.hash.substring(0, 9)}</div>
                   <div style={{ fontSize: "0.6em" }}>
                     {block.confirmed && "Confirmed"}
