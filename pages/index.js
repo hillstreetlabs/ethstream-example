@@ -96,13 +96,19 @@ export default class Index extends Component {
   }
 
   async start() {
-    const eth = new Eth(new Eth.HttpProvider(JSON_RPC_URL));
-    const currentBlock = await eth.blockNumber();
-    const fromBlock = await eth.getBlockByNumber(
-      currentBlock.toNumber() - INITIAL_BLOCK_LENGTH,
-      true
-    );
-    this.stream = new EthStream(JSON_RPC_URL, {
+    let provider;
+    if (
+      typeof web3 !== "undefined" &&
+      typeof web3.currentProvider !== "undefined"
+    ) {
+      provider = web3.currentProvider;
+    } else {
+      provider = new Eth.HttpProvider(JSON_RPC_URL);
+    }
+
+    const eth = new Eth(provider);
+    const currentBlockNumber = await eth.blockNumber();
+    this.stream = new EthStream(provider, {
       onAddBlock: action(block => {
         this.blocks.set(block.hash, {
           hash: block.hash,
@@ -127,7 +133,7 @@ export default class Index extends Component {
           });
         }
       },
-      fromBlock
+      fromBlockNumber: currentBlockNumber - 6
     });
 
     this.stream.start();
@@ -201,6 +207,7 @@ export default class Index extends Component {
         <Head>
           <title>EthStream Example</title>
           <style>{`body { margin: 0 }`}</style>
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
         </Head>
         <Info>
           {!this.currentSnapshotIndex ? (

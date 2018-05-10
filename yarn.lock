@@ -1835,9 +1835,9 @@ ethjs@^0.3.9:
     js-sha3 "0.5.5"
     number-to-bn "1.7.0"
 
-ethstream@^0.0.2:
-  version "0.0.2"
-  resolved "https://registry.yarnpkg.com/ethstream/-/ethstream-0.0.2.tgz#f52bc3f6fe46d70dc432073c0fe9247e80e423c7"
+ethstream@^0.0.3:
+  version "0.0.3"
+  resolved "https://registry.yarnpkg.com/ethstream/-/ethstream-0.0.3.tgz#0bea14b8e88c8450ee17c580087bb532459944c5"
   dependencies:
     ethjs "^0.3.9"
     mobx "^4.2.1"
