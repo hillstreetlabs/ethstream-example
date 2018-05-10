@@ -25,13 +25,9 @@ const BlockView = styled("a")`
   font-size: 1.5em;
   cursor: pointer;
   box-sizing: border-box;
-  transition: background-color 0.2s, width 0.2s, height 0.2s, margin 0.2s,
-    padding 0.2s;
+  transition: background-color 0.2s, transform 0.2s;
   &:hover {
-    margin: -2px;
-    width: ${BLOCK_WIDTH - 6};
-    height: ${BLOCK_HEIGHT - 6}px;
-    padding: 7px;
+    transform: scale(1.02);
   }
 `;
 
@@ -54,7 +50,7 @@ const BlockContainer = styled("div")`
 
 const Container = styled("div")`
   position: relative;
-  margin: 0;
+  margin: 5px;
 `;
 
 const Info = styled("div")`
@@ -155,7 +151,8 @@ export default class Index extends Component {
   get snapshot() {
     // Clone each element
     const array = Array.from(this.blocks.values()).map(bl => ({ ...bl }));
-    array.sort((a, b) => b.childDepth - a.childDepth);
+    const sortBy = block => block.number * 100 - block.childDepth;
+    array.sort((a, b) => sortBy(a) - sortBy(b));
     return array;
   }
 
@@ -203,6 +200,7 @@ export default class Index extends Component {
       <Container>
         <Head>
           <title>EthStream Example</title>
+          <style>{`body { margin: 0 }`}</style>
         </Head>
         <Info>
           {!this.currentSnapshotIndex ? (
