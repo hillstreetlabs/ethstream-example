@@ -6,7 +6,7 @@ import styled, { css } from "react-emotion";
 import EthStream from "ethstream";
 import tinycolor from "tinycolor2";
 import Eth from "ethjs";
-import { TransitionGroup } from "react-transition-group";
+import { TransitionGroup, CSSTransition } from "react-transition-group";
 
 const JSON_RPC_URL = "https://mainnet.infura.io/G43qWCHvm4lsVQtV7tvu";
 const BLOCK_WIDTH = 200;
@@ -39,13 +39,12 @@ const BlockContainer = styled("div")`
   transition: top 0.2s, left 0.2s, transform 0.2s, opacity 0.2s;
   opacity: 0;
   transform: translateY(10px);
-  ${props => {
-    if (props.in)
-      return css`
-        opacity: 1;
-        transform: none;
-      `;
-  }};
+  &.block-enter,
+  &.block-enter-active,
+  &.block-enter-done {
+    opacity: 1;
+    transform: none;
+  }
 `;
 
 const Container = styled("div")`
@@ -61,7 +60,7 @@ const Info = styled("div")`
 `;
 
 const MAX_SNAPSHOTS = 200;
-const BLOCK_LENGTH = 20;
+const BLOCK_LENGTH = 4;
 const INITIAL_BLOCK_LENGTH = 6;
 
 const toRandomColor = hex => {
@@ -156,10 +155,7 @@ export default class Index extends Component {
   @computed
   get snapshot() {
     // Clone each element
-    const array = Array.from(this.blocks.values()).map(bl => ({ ...bl }));
-    const sortBy = block => block.number * 100 - block.childDepth;
-    array.sort((a, b) => sortBy(a) - sortBy(b));
-    return array;
+    return Array.from(this.blocks.values()).map(bl => ({ ...bl }));
   }
 
   prevSnapshot() {
@@ -192,6 +188,12 @@ export default class Index extends Component {
     }
   }
 
+  @computed
+  get allBlocksSortedByChildDepth() {
+    const sortBy = block => block.number * 100 - block.childDepth;
+    return this.allBlocks.slice().sort((a, b) => sortBy(a) - sortBy(b));
+  }
+
   bumpChildDepth(blockHash) {
     if (!this.blocks.has(blockHash)) return;
 
@@ -201,7 +203,15 @@ export default class Index extends Component {
   }
 
   render() {
-    const renderedBlocksByNumber = {};
+    // Determine left position (blocks with higher child depth should be
+    // farther left)
+    const blocksByNumber = {};
+    const leftPositionByHash = {};
+    for (let block of this.allBlocksSortedByChildDepth) {
+      if (!blocksByNumber[block.number]) blocksByNumber[block.number] = 0;
+      leftPositionByHash[block.hash] = blocksByNumber[block.number];
+      blocksByNumber[block.number]++;
+    }
     return (
       <Container>
         <Head>
@@ -222,32 +232,29 @@ export default class Index extends Component {
         </Info>
         <TransitionGroup>
           {this.allBlocks.map(block => {
-            if (!renderedBlocksByNumber[block.number])
-              renderedBlocksByNumber[block.number] = 0;
-            renderedBlocksByNumber[block.number]++;
+            const top = (this.maxBlockNumber - block.number) * BLOCK_HEIGHT;
+            const left = leftPositionByHash[block.hash] * BLOCK_WIDTH;
             return (
-              <BlockContainer
-                key={block.hash}
-                style={{
-                  top: (this.maxBlockNumber - block.number) * BLOCK_HEIGHT,
-                  left: (renderedBlocksByNumber[block.number] - 1) * BLOCK_WIDTH
-                }}
-              >
-                <BlockView
-                  href={`https://etherscan.io/block/${block.hash}`}
-                  target="_blank"
-                  isConfirmed={block.confirmed}
-                  style={{
-                    backgroundColor: toColor(block.childDepth)
-                  }}
-                >
-                  <div style={{ fontSize: "0.5em" }}>{block.number}</div>
-                  <div>{block.hash.substring(0, 9)}</div>
-                  <div style={{ fontSize: "0.6em" }}>
-                    {block.confirmed && "Confirmed"}
-                  </div>
-                </BlockView>
-              </BlockContainer>
+              <CSSTransition classNames="block" timeout={200} key={block.hash}>
+                {status => (
+                  <BlockContainer key={block.hash} style={{ top, left }}>
+                    <BlockView
+                      href={`https://etherscan.io/block/${block.hash}`}
+                      target="_blank"
+                      isConfirmed={block.confirmed}
+                      style={{
+                        backgroundColor: toColor(block.childDepth)
+                      }}
+                    >
+                      <div style={{ fontSize: "0.5em" }}>{block.number}</div>
+                      <div>{block.hash.substring(0, 9)}</div>
+                      <div style={{ fontSize: "0.6em" }}>
+                        {block.confirmed && "Confirmed"}
+                      </div>
+                    </BlockView>
+                  </BlockContainer>
+                )}
+              </CSSTransition>
             );
           })}
         </TransitionGroup>
