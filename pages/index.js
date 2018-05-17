@@ -60,7 +60,7 @@ const Info = styled("div")`
 `;
 
 const MAX_SNAPSHOTS = 200;
-const BLOCK_LENGTH = 4;
+const BLOCK_LENGTH = 15;
 const INITIAL_BLOCK_LENGTH = 6;
 
 const toRandomColor = hex => {
